@@ -285,31 +285,23 @@ class Compiler
      * @param string $content
      * @return void
      */
-    protected function putContent($file, $content)
+    private function putContent(string $content): void
     {
-        $directory = dirname($file);
+        $file = base_path($this->cachePath);
+        $arr = explode('/', $file);
+        $depth = count($arr) - 1;
 
-        // Pastikan direktori cache ada
-        if (!is_dir($directory)) {
-            if (!@mkdir($directory, 0777, true)) {
-                throw new Exception("Failed to create directory for cache: $directory");
-            }
+        $folder = implode('/', array_splice($arr, 0, -1));
+        if (!is_dir($folder) && $depth > 3) {
+            @mkdir($folder, 0777, true);
+        } else if (!is_dir(base_path($this->originCachePath))) {
+            @mkdir(base_path($this->originCachePath), 0777, true);
         }
 
-        // Coba tulis file cache
-        $result = @file_put_contents($file . '.php', $content);
-
-        if ($result === false) {
-            $lastError = error_get_last();
-            $errorMessage = isset($lastError['message']) ? $lastError['message'] : 'Unknown error';
-            throw new Exception(sprintf(
-                "Can't save file [%s.php]: %s",
-                $file,
-                $errorMessage
-            ));
+        if (!(bool) @file_put_contents($file . '.php', $content)) {
+            throw new Exception(sprintf('Can\'t save file [%s.php]', $this->cachePath));
         }
     }
-
 
     /**
      * Save temporary orignal blocks.
