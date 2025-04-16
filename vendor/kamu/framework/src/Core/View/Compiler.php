@@ -287,21 +287,33 @@ class Compiler
      */
     private function putContent(string $content): void
     {
+        // Fallback ke /tmp kalau path cache default tidak bisa ditulis
+        $defaultPath = base_path($this->cachePath);
+        if (!is_writable(dirname($defaultPath))) {
+            // Ubah path cache ke /tmp
+            $this->cachePath = 'tmp/' . basename($this->cachePath);
+            $this->originCachePath = 'tmp';
+        }
+
         $file = base_path($this->cachePath);
         $arr = explode('/', $file);
         $depth = count($arr) - 1;
 
         $folder = implode('/', array_splice($arr, 0, -1));
+
+        // Pastikan folder tempat menyimpan file ada
         if (!is_dir($folder) && $depth > 3) {
             @mkdir($folder, 0777, true);
         } else if (!is_dir(base_path($this->originCachePath))) {
             @mkdir(base_path($this->originCachePath), 0777, true);
         }
 
+        // Tulis konten ke file .php
         if (!(bool) @file_put_contents($file . '.php', $content)) {
             throw new Exception(sprintf('Can\'t save file [%s.php]', $this->cachePath));
         }
     }
+
 
     /**
      * Save temporary orignal blocks.
